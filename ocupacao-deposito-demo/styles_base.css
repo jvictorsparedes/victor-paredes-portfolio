@@ -1,0 +1,187 @@
+/* ============================================================
+   DESIGN SYSTEM v3  ·  styles_base.css
+   Base visual compartilhada — extraída para a demo de portfólio.
+   Importar no <head>:  <link rel="stylesheet" href="styles_base.css">
+   Fontes (Google Fonts) continuam no <head> de cada HTML:
+   Barlow Condensed 700/800 + Inter 400-900.
+   Regra: NÃO duplicar estes estilos dentro do HTML. CSS específico
+   de cada sistema fica em <style> próprio APÓS este arquivo.
+   ============================================================ */
+
+/* ---------- TOKENS ---------- */
+:root{
+  --azul:#012144;--azul-2:#072E57;--laranja:#F37020;--laranja-2:#FF8534;
+  --fundo:#F0F3F7;--azul-claro:#E7F0F8;--borda:#DCE3EC;--texto:#1A2433;
+  --muted:#64748B;--verde:#16A34A;--amarelo:#D97706;--vermelho:#DC2626;
+  --sombra:0 8px 26px rgba(1,33,68,.08);--sombra-lg:0 18px 50px rgba(1,33,68,.16);
+}
+
+/* ---------- RESET ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;background:var(--fundo);color:var(--texto);-webkit-font-smoothing:antialiased}
+::selection{background:var(--laranja);color:#fff}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:var(--fundo)}
+::-webkit-scrollbar-thumb{background:#c2cdda;border-radius:99px;border:3px solid var(--fundo)}
+::-webkit-scrollbar-thumb:hover{background:#a9b7c8}
+
+/* ============================================================
+   HEADER — padrão v3 (3 zonas)
+   [logo + separador + nome/subtítulo do sistema] | [título central fixo] | [ação]
+   ============================================================ */
+.header{height:64px;background:linear-gradient(108deg,var(--azul) 0%,var(--azul-2) 100%);display:grid;grid-template-columns:auto 1fr auto;align-items:center;padding:0 26px;box-shadow:0 2px 20px rgba(1,33,68,.45);position:sticky;top:0;z-index:50}
+.header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--laranja)}
+
+/* ZONA ESQUERDA — logo + nome do sistema + subtítulo */
+.logoBox{display:flex;align-items:center;gap:13px}
+.logoBox img{height:40px;max-width:160px;width:auto;object-fit:contain;display:block;transition:opacity .18s,filter .18s}
+/* .is-link: variante em que a logo vira atalho clicável (não usada nesta demo) */
+.logoBox.is-link img{cursor:pointer}
+.logoBox.is-link img:hover{opacity:.85;filter:brightness(1.12)}
+.logoBox .sep{width:1px;height:32px;background:rgba(255,255,255,.18)}
+/* ZONA ESQUERDA — logo + contexto (a logo já comunica a marca) */
+.logoBox .sys{display:flex;flex-direction:column;line-height:1.05}
+.logoBox .sys b{font-family:'Barlow Condensed',Inter;font-weight:700;font-size:15px;color:#fff;letter-spacing:.3px}
+.logoBox .sys span{font-size:11px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:.2px}
+
+/* ZONA CENTRAL — nome do sistema (destaque) + subtítulo */
+.header-center{display:flex;justify-content:center}
+.header-titleBox{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.header-titleBox b{font-family:'Barlow Condensed',Inter;font-weight:700;font-size:21px;color:#fff;letter-spacing:.4px}
+.header-titleBox span{font-size:11px;font-weight:500;color:var(--laranja-2);margin-top:2px;letter-spacing:.2px}
+
+/* ZONA DIREITA — ação (Voltar ao Portal) / chip */
+.header-right{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.btnVoltar{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font-family:Inter,sans-serif;font-weight:700;font-size:12.5px;text-decoration:none;white-space:nowrap;transition:.18s ease}
+.btnVoltar:hover{background:var(--laranja);border-color:var(--laranja);transform:translateY(-1px);box-shadow:0 6px 18px rgba(243,112,32,.28)}
+.hChip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:7px 13px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff}
+.hChip .dot{width:8px;height:8px;border-radius:50%;background:var(--laranja-2)}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.main{max-width:1480px;margin:0 auto;padding:24px 22px 60px}
+.sectionTitle{display:flex;align-items:center;justify-content:space-between;margin:0 4px 14px}
+.sectionTitle h3{font-family:'Barlow Condensed',Inter;font-size:22px;font-weight:700;color:var(--azul);letter-spacing:.3px}
+.sectionTitle span{font-size:12px;color:var(--muted);font-weight:700}
+.footer{text-align:center;color:#94a3b8;font-size:11px;font-weight:600;padding:30px}
+
+/* ---------- KPIs (v3: gradiente + faixa laranja) ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{position:relative;border-radius:15px;padding:15px 18px;overflow:hidden;min-height:88px;display:flex;flex-direction:column;justify-content:center;gap:5px;background:linear-gradient(140deg,var(--azul) 0%,var(--azul-2) 100%)}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--laranja);border-radius:0 0 15px 15px}
+.kpi .num{color:var(--laranja);font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:36px;line-height:.95}
+.kpi .lbl{color:#D9E4F0;font-size:11px;font-weight:800;text-transform:uppercase;line-height:1.25;letter-spacing:.3px}
+/* Modificador: remove a faixa laranja da base (KPIs com cor semântica própria) */
+.kpi.kpi-no-bar::after{content:none}
+
+/* ---------- CARDS / PAINÉIS ---------- */
+.card{background:#fff;border:1px solid var(--borda);border-radius:16px;box-shadow:var(--sombra);transition:transform .2s ease,box-shadow .2s ease;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.card::before{content:"";display:block;height:4px;background:var(--laranja);flex-shrink:0}
+.card:hover{transform:translateY(-3px);box-shadow:var(--sombra-lg)}
+.card:hover::before{background:linear-gradient(90deg,var(--laranja),var(--laranja-2))}
+
+/* ============================================================
+   TOOLBAR / BUSCA / CHIPS
+   ============================================================ */
+.toolbar{background:#fff;border:1px solid var(--borda);border-radius:16px;box-shadow:var(--sombra);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.search{position:relative;flex:0 0 340px}
+.search input{width:100%;height:42px;border:1px solid var(--borda);border-radius:11px;padding:0 14px 0 40px;font-family:Inter,sans-serif;font-size:14px;background:#fff;color:var(--texto);outline:none;transition:.18s}
+.search input:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(1,33,68,.06)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;opacity:.6}
+.divider{width:1px;height:30px;background:var(--borda);flex-shrink:0}
+.chip{border:1px solid var(--borda);background:#fff;color:var(--azul);border-radius:999px;padding:9px 16px;font-weight:800;font-size:12px;cursor:pointer;transition:.18s ease;font-family:Inter,sans-serif}
+.chip:hover{border-color:var(--laranja);color:var(--laranja)}
+.chip.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+
+/* ============================================================
+   FORMULÁRIOS — padrão global de campos (v3.1)
+   Use .form-section > .form-grid-N > .field-group(label + input)
+   ============================================================ */
+label{display:block;font-size:11px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+input,select,textarea{font-family:Inter,sans-serif;font-size:14px;color:var(--texto)}
+.field{width:100%;height:42px;border:1px solid var(--borda);border-radius:10px;padding:0 14px;background:#fff;outline:none;transition:.18s}
+.field:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(1,33,68,.08)}
+textarea.field{height:auto;padding:12px 14px;resize:vertical;min-height:90px}
+
+/* Wrapper de campo individual */
+.field-group{display:flex;flex-direction:column;gap:0;margin-bottom:0}
+.field-group>label{display:block;font-size:11px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field-group>input,.field-group>select,.field-group>textarea{
+  width:100%;box-sizing:border-box;border:1.5px solid var(--borda);border-radius:10px;
+  padding:10px 14px;font-size:14px;font-family:Inter,sans-serif;color:var(--texto);
+  background:#fff;outline:none;transition:border-color .2s,box-shadow .2s}
+.field-group>textarea{resize:vertical;min-height:90px}
+.field-group>input:focus,.field-group>select:focus,.field-group>textarea:focus{
+  border-color:var(--azul);box-shadow:0 0 0 3px rgba(1,33,68,.08)}
+
+/* Seção e grids de formulário (responsivos: 1 coluna < 600px) */
+.form-section{display:flex;flex-direction:column;gap:16px;padding:20px}
+.form-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.form-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:600px){.form-grid-2,.form-grid-3,.form-grid-4{grid-template-columns:1fr}}
+
+/* ============================================================
+   BOTÕES — padrão único
+   .btn base 42px · listagens usam .btn-sm (34px)
+   Variantes de ação e de exportação com cores fixas da marca.
+   ============================================================ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:42px;padding:0 18px;border:1px solid transparent;border-radius:10px;font-family:Inter,sans-serif;font-weight:800;font-size:13px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:.18s ease;line-height:1}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled,.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.btn-sm{height:34px;padding:0 14px;font-size:12.5px;font-weight:700;border-radius:9px}
+
+/* Ações */
+.btn-primary{background:var(--azul);color:#fff}
+.btn-primary:hover{background:var(--laranja);box-shadow:0 6px 18px rgba(243,112,32,.28)}
+.btn-secondary{background:#fff;border-color:var(--borda);color:var(--azul)}
+.btn-secondary:hover{border-color:var(--laranja);color:var(--laranja)}
+.btn-success{background:var(--verde);color:#fff}
+.btn-success:hover{filter:brightness(1.08);box-shadow:0 6px 18px rgba(22,163,74,.28)}
+.btn-danger{background:var(--vermelho);color:#fff}
+.btn-danger:hover{filter:brightness(1.08);box-shadow:0 6px 18px rgba(220,38,38,.28)}
+
+/* Exportação — cores fixas por tipo de arquivo */
+.btn-pdf{background:#991B1B;color:#fff}
+.btn-pdf:hover{filter:brightness(1.1);box-shadow:0 6px 18px rgba(153,27,27,.3)}
+.btn-excel{background:#166534;color:#fff}
+.btn-excel:hover{filter:brightness(1.12);box-shadow:0 6px 18px rgba(22,101,52,.3)}
+.btn-png{background:var(--laranja);color:#fff}
+.btn-png:hover{filter:brightness(1.06);box-shadow:0 6px 18px rgba(243,112,32,.3)}
+.btn-pptx{background:#C2410C;color:#fff}
+.btn-pptx:hover{filter:brightness(1.1);box-shadow:0 6px 18px rgba(194,65,12,.3)}
+
+/* ============================================================
+   TABELAS — wrapper branco, thead laranja sticky, zebra
+   ============================================================ */
+.tableWrap{background:#fff;border:1px solid var(--borda);border-radius:16px;box-shadow:var(--sombra);overflow:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+table.tbl thead th{position:sticky;top:0;z-index:2;background:linear-gradient(108deg,var(--laranja),var(--laranja-2));color:#fff;text-transform:uppercase;letter-spacing:.3px;font-size:11.5px;font-weight:800;text-align:left;padding:11px 14px;white-space:nowrap}
+table.tbl tbody td{padding:10px 14px;border-bottom:1px solid var(--borda);color:var(--texto)}
+table.tbl tbody tr:nth-child(even){background:#FAFBFD}
+table.tbl tbody tr:hover{background:var(--azul-claro)}
+
+/* ---------- EMPTY STATE ---------- */
+.empty{display:none;background:#fff;border:1px dashed var(--borda);border-radius:16px;padding:34px;text-align:center;color:var(--muted);font-weight:700;margin-top:8px}
+
+/* ---------- ANIMAÇÕES ---------- */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+@media(max-width:1200px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){
+  .main{padding:18px 12px}
+  .header{padding:0 14px;grid-template-columns:auto 1fr auto}
+  .header-titleBox{display:none}
+  .logoBox .sys{display:none}
+  .logoBox img{height:34px}
+  .btnVoltar{height:34px;padding:0 12px;font-size:12px}
+  .kpis{grid-template-columns:1fr}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .search{flex:none;width:100%}
+  .divider{display:none}
+}

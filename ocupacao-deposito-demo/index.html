@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Painel de Ocupação de Depósito — Demo de Portfólio</title>
+<meta name="description" content="Demonstração de sistema de gestão de ocupação de depósito, por Victor Paredes.">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles_base.css">
+<script src="vendor/html2canvas.min.js"></script>
+<style>
+/* Marca substituta da logo real (demo sem identidade visual de cliente) */
+.logoMark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--azul),var(--azul-2));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;color:#fff;letter-spacing:.3px;flex:0 0 auto;position:relative;overflow:hidden}
+.logoMark::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--laranja)}
+
+.wrap{max-width:1340px;margin:0 auto;padding:8px 12px 8px}
+
+/* LAYOUT 2 COLUNAS */
+.layout{display:grid;grid-template-columns:260px 1fr;gap:10px;align-items:stretch}
+
+/* SIDEBAR ENTRADAS */
+.sidebar{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(1,33,68,.05);position:sticky;top:72px;display:flex;flex-direction:column;gap:9px}
+.sidebar-title{font-size:12px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.5px;padding-bottom:7px;border-bottom:1px solid var(--borda)}
+.sidebar-fields{display:grid;grid-template-columns:1fr;gap:12px}
+.field-group{display:flex;flex-direction:column;gap:7px}
+.fg-title{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.4px}
+.fg-title::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--azul);flex:0 0 auto}
+.fg-title.san::before{background:var(--laranja)}
+/* aqui .field é só um wrapper (label + input) — anula a "caixa" de 42px herdada do styles_base (.field) */
+.field{height:auto;border:0;border-radius:0;padding:0;background:transparent;align-self:start}
+.field label{display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+/* inputs no padrão-ouro dos campos DE/ATÉ do Relatorio_Ocupacao_Deposito.html */
+.field input{width:100%;height:34px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-size:12.5px;font-weight:600;color:var(--azul);background:#fff;transition:.2s;box-sizing:border-box;-moz-appearance:textfield}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.field input:focus{outline:none;border-color:var(--laranja);box-shadow:0 0 0 3px rgba(243,112,32,.12)}
+.field.san input{color:var(--laranja)}
+.sidebar-actions{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--borda)}
+.btn{height:42px;border-radius:10px;border:none;padding:0 14px;font-family:'Inter',sans-serif;font-weight:800;font-size:13px;cursor:pointer;transition:.2s;letter-spacing:.3px;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn.btn-sm{height:34px}
+
+/* DASHBOARD */
+.dashboard{display:flex;flex-direction:column;gap:8px;min-width:0}
+
+/* HERO PRINCIPAL */
+.hero{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:10px 18px;box-shadow:0 6px 18px rgba(1,33,68,.06);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--status-color,var(--verde));transition:.3s}
+.hero-grid{display:grid;grid-template-columns:1.75fr 1fr;gap:18px;align-items:center}
+.hero-left{display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden}
+.hero-status{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;background:var(--status-bg,#DCFCE7);color:var(--status-color,var(--verde))}
+.hero-status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--status-color,var(--verde))}
+.hero-label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.hero-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:88px;line-height:.86;color:var(--azul);letter-spacing:-2px;white-space:nowrap}
+.hero-num .pct{color:var(--azul);font-size:56px;margin-left:3px;vertical-align:top}
+.hero-bar{height:10px;background:#EEF2F6;border-radius:999px;overflow:hidden;border:1px solid var(--borda);margin-top:3px}
+.hero-bar-fill{height:100%;background:var(--status-color,var(--verde));border-radius:999px;transition:width .4s ease,background .3s;min-width:0}
+
+.hero-right{background:linear-gradient(135deg,var(--pse-bg,#FFF8F2) 0%,var(--pse-bg,#FFEFE0) 100%);border:1px solid var(--pse-bd,#FFD9B8);border-radius:12px;padding:10px 12px;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.hero-right::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--pse-acc,#F37020);border-radius:12px 12px 0 0}
+.hero-right .pse-label{font-size:10px;font-weight:800;color:var(--pse-acc,#F37020);text-transform:uppercase;letter-spacing:.6px}
+.hero-right .pse-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:54px;line-height:.92;color:var(--pse-acc,var(--azul));letter-spacing:-1px}
+.hero-right .pse-desc{font-size:9.5px;color:var(--muted);font-weight:600;line-height:1.3}
+
+/* KPIs GERAIS — 4 cards */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{background:#fff;border:1px solid var(--borda);border-radius:10px;padding:8px 12px;box-shadow:0 4px 12px rgba(1,33,68,.04);position:relative;overflow:hidden;text-align:center}
+.kpi::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--laranja)}
+.kpi .kpi-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.kpi .kpi-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:28px;line-height:1;color:var(--azul)}
+
+/* SETORES */
+.setores{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.setor{background:#fff;border:1px solid var(--borda);border-radius:10px;padding:9px 12px;box-shadow:0 6px 18px rgba(1,33,68,.05);position:relative;overflow:hidden}
+.setor::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--setor-color,var(--verde))}
+.setor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--borda)}
+.setor-name{display:flex;align-items:center;gap:7px}
+.setor-name .dot{width:9px;height:9px;border-radius:50%;background:var(--azul);flex:0 0 auto}
+.setor.san .setor-name .dot{background:var(--laranja)}
+.setor-name h2{font-size:13px;font-weight:800;color:var(--azul);letter-spacing:-.2px;line-height:1}
+.setor-name .cap-text{font-size:9.5px;color:var(--muted);font-weight:700;margin-top:1px;text-transform:uppercase;letter-spacing:.4px}
+.setor-status{padding:3px 9px;border-radius:999px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:var(--setor-bg,#DCFCE7);color:var(--setor-color,var(--verde));white-space:nowrap}
+
+/* Saturação do setor: label EM CIMA, número EMBAIXO (igual PNG) */
+.setor-sat{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin-bottom:3px}
+.setor-sat-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.setor-sat-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:36px;line-height:.95;color:var(--azul);letter-spacing:-.5px;white-space:nowrap}
+.setor-sat-num .pct{color:var(--azul);font-size:23px;vertical-align:top;margin-left:2px}
+
+.setor-bar{height:8px;background:#EEF2F6;border-radius:999px;overflow:hidden;border:1px solid var(--borda);margin-bottom:6px}
+.setor-bar-fill{height:100%;background:var(--setor-color,var(--verde));border-radius:999px;transition:width .4s ease,background .3s}
+
+.setor-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+.setor-kpi{background:#F8FAFD;border:1px solid var(--borda);border-radius:7px;padding:5px 9px}
+.setor-kpi.highlight{background:var(--pse-bg,#FFF8F2);border-color:var(--pse-bd,#FFD9B8)}
+.setor-kpi.full{grid-column:span 2}
+.setor-kpi .sk-label{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
+.setor-kpi.highlight .sk-label{color:var(--pse-acc,var(--laranja))}
+.setor-kpi .sk-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;line-height:1;color:var(--azul)}
+.setor-kpi.highlight .sk-num{color:var(--azul);font-weight:800}
+
+/* MODAL LOGO */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(1,33,68,.55);z-index:9999;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px 28px 24px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:18px;font-weight:800;color:var(--azul);margin-bottom:8px}
+.modal p{font-size:13.5px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.modal-actions{display:flex;flex-direction:column;gap:10px}
+.modal-actions .btn{width:100%;justify-content:center;display:flex;align-items:center}
+.modal-actions input[type=file]{display:none}
+
+/* MODAL REGISTRO */
+.modal-reg{max-width:520px}
+.modal-reg-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.modal-reg-header h3{font-size:17px;font-weight:800;color:var(--azul);margin-bottom:3px}
+.modal-reg-date{font-size:12.5px;color:var(--muted);font-weight:600}
+.modal-reg-status{padding:6px 13px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;flex:0 0 auto}
+.modal-reg-inst{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.modal-reg-inst strong{color:var(--azul)}
+.modal-reg-box{position:relative;margin-bottom:14px}
+.modal-reg-box textarea{width:100%;background:#F8FAFD;border:1px solid var(--borda);border-radius:10px;padding:12px 80px 12px 14px;font-family:'Inter',sans-serif;font-size:11.5px;color:var(--azul);resize:none;line-height:1.5}
+.btn-copy{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--azul);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:'Inter',sans-serif;font-weight:800;font-size:12px;cursor:pointer;transition:.2s;white-space:nowrap}
+.btn-copy:hover{background:var(--laranja)}
+.btn-copy.copied{background:#16A34A}
+.modal-reg-preview{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.rp-item{background:#F8FAFD;border:1px solid var(--borda);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.rp-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.rp-val{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:26px;color:var(--azul);line-height:1}
+.rp-pse{color:#DC2626}
+.modal-reg-section-title{font-size:11.5px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.modal-reg-divider{height:1px;background:var(--borda);margin:14px 0}
+/* Modal WhatsApp — padrão da suíte (igual ao Relatório de Ocupação) */
+.modal-sub{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:14px}
+.modal-badge{padding:5px 12px;border-radius:999px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;display:inline-flex;margin-bottom:12px}
+.modal-section-title{font-size:11px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:14px}
+.modal-section-title:first-of-type{margin-top:0}
+.modal-inst{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.4}
+.modal-box{position:relative;margin-bottom:4px}
+.modal-box textarea{width:100%;background:#F8FAFD;border:1px solid var(--borda);border-radius:9px;padding:10px 72px 10px 12px;font-family:'Inter',sans-serif;font-size:11.5px;color:var(--azul);resize:none;line-height:1.5}
+.btn-wpp-share{width:100%;height:46px;font-size:14px;margin-top:4px}
+.modal-toggle-msg{display:inline-block;margin-top:10px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;text-decoration:underline;user-select:none}
+.modal-toggle-msg:hover{color:var(--laranja)}
+.modal-footer{display:flex;justify-content:flex-end;margin-top:14px}
+.btn-fechar{height:36px;border-radius:8px;border:1px solid var(--borda);background:#fff;color:var(--azul);font-family:'Inter',sans-serif;font-weight:800;font-size:12.5px;cursor:pointer;padding:0 20px;transition:.2s}
+.btn-fechar:hover{border-color:var(--laranja);color:var(--laranja)}
+
+@media(max-width:1100px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .sidebar{position:static}
+  .sidebar-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .sidebar-actions{flex-direction:row}
+  .hero-grid{grid-template-columns:1fr;gap:14px}
+  .hero-num{font-size:90px}
+  .hero-num .pct{font-size:56px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .setores{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .wrap{padding:10px 10px}
+  .hero{padding:14px}
+  .hero-num{font-size:80px}
+  .hero-num .pct{font-size:50px}
+  .hero-right .pse-num{font-size:54px}
+  .sidebar-fields{grid-template-columns:1fr}
+  .sidebar-actions{flex-direction:column}
+}
+
+/* ============ PNG EXPORT (1080 x 1350) ============
+   Distribuição vertical compactada (sem sobras):
+   Header  ~130px (10%)
+   Hero    ~440px (33%)
+   KPIs    ~130px (10%)
+   Setores ~530px (39%)
+   Paddings/gaps ~120px (9%)
+*/
+.png-stage{position:fixed;left:-10000px;top:0;width:1080px;height:1350px;background:#F0F3F7;font-family:'Inter',sans-serif;color:var(--texto);padding:28px 28px 28px;display:flex;flex-direction:column;gap:12px}
+.png-stage *{box-sizing:border-box}
+
+/* HEADER */
+.png-head{background:var(--azul);border-radius:18px;padding:20px 28px;display:flex;align-items:center;flex:0 0 130px;position:relative;overflow:hidden}
+.png-head::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--laranja)}
+.png-head .png-logo{height:80px;max-width:160px;object-fit:contain;flex:0 0 auto;position:relative;z-index:2}
+.png-head .png-titles{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;z-index:1;padding:0 200px}
+.png-head .png-titles h1{color:#fff;font-size:32px;font-weight:800;letter-spacing:.5px;line-height:1.1}
+.png-head .png-titles .png-date{color:#cbd5e1;font-size:16px;font-weight:600;margin-top:8px}
+
+/* HERO */
+.png-hero{background:#fff;border-radius:20px;padding:28px 32px;box-shadow:0 8px 24px rgba(1,33,68,.08);position:relative;overflow:hidden;flex:0 0 440px;display:flex}
+.png-hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--status-color,var(--verde))}
+.png-hero-grid{display:grid;grid-template-columns:1.75fr 1fr;gap:22px;align-items:stretch;width:100%}
+.png-hero-left{display:flex;flex-direction:column;justify-content:center;gap:14px;min-width:0;overflow:hidden}
+.png-hero-status{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;padding:10px 20px;border-radius:999px;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;background:var(--status-bg,#DCFCE7);color:var(--status-color,var(--verde))}
+.png-hero-status::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--status-color,var(--verde))}
+.png-hero-label{font-size:15px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:-2px}
+/* Ajuste 7 — número saturação geral usa cor do status */
+.png-hero-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:188px;line-height:.86;color:var(--azul);letter-spacing:-2px;white-space:nowrap}
+.png-hero-num .pct{color:var(--azul);font-size:118px;margin-left:4px;vertical-align:top}
+.png-hero-bar{height:22px;background:#EEF2F6;border-radius:999px;overflow:hidden;border:1px solid var(--borda)}
+.png-hero-bar-fill{height:100%;background:var(--status-color,var(--verde));border-radius:999px}
+
+/* Ajustes 8+10 — PSE Hero: cor dinâmica (--pse-acc/bg/bd), número maior, sem sobra */
+.png-pse{background:var(--pse-bg,#FFF8F2);border:1.5px solid var(--pse-bd,#FFD9B8);border-radius:18px;padding:20px 18px;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.png-pse::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:var(--pse-acc,var(--laranja));border-radius:18px 18px 0 0}
+.png-pse-label{font-size:14px;font-weight:800;color:var(--pse-acc,var(--laranja));text-transform:uppercase;letter-spacing:.6px;line-height:1.2}
+.png-pse-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:160px;line-height:.86;color:var(--pse-acc,var(--azul));letter-spacing:-2px}
+.png-pse-desc{font-size:13px;color:var(--muted);font-weight:600;line-height:1.35}
+
+/* Ajuste 11 — KPIs: números maiores para preencher melhor */
+.png-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:0 0 130px}
+.png-kpi{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:12px 12px;text-align:center;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.png-kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--azul)}
+.png-kpi .pk-label{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;line-height:1.1}
+.png-kpi .pk-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:70px;line-height:.88;color:var(--azul)}
+
+/* SETORES */
+.png-setores{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1 1 auto;min-height:0}
+.png-setor{background:#fff;border:1px solid var(--borda);border-radius:16px;padding:22px 22px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.png-setor::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--setor-color,var(--verde))}
+
+.png-setor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--borda);flex:0 0 auto}
+.png-setor-name{display:flex;align-items:center;gap:12px}
+.png-setor-name .dot{width:14px;height:14px;border-radius:50%;background:var(--azul);flex:0 0 auto}
+.png-setor.san .png-setor-name .dot{background:var(--laranja)}
+.png-setor-name h2{font-size:22px;font-weight:800;color:var(--azul);line-height:1}
+.png-setor-name .cap{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+.png-setor-status{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:var(--setor-bg,#DCFCE7);color:var(--setor-color,var(--verde));white-space:nowrap}
+
+/* Ajuste 7+12 — saturação setor usa cor do status, menos margem embaixo */
+.png-setor-sat-block{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.png-setor-sat{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.png-setor-sat-label{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.png-setor-sat-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:100px;line-height:.92;color:var(--azul);letter-spacing:-1px;white-space:nowrap}
+.png-setor-sat-num .pct{color:var(--azul);font-size:64px;vertical-align:top;margin-left:3px}
+.png-setor-bar{height:16px;background:#EEF2F6;border-radius:999px;overflow:hidden;border:1px solid var(--borda);width:100%;flex-shrink:0;flex-grow:0;flex-basis:16px}
+.png-setor-bar-fill{height:100%;background:var(--setor-color,var(--verde));border-radius:999px;min-width:8px}
+
+/* Ajustes 9+13 — mini-KPI PSE: cor dinâmica, padding maior, número maior */
+.png-setor-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;flex:0 0 auto;margin-top:auto}
+.png-setor-kpi{background:#F8FAFD;border:1px solid var(--borda);border-radius:10px;padding:10px 12px}
+.png-setor-kpi.highlight{background:var(--pse-bg,#FFF8F2);border-color:var(--pse-bd,#FFD9B8);padding:14px 16px}
+.png-setor-kpi.full{grid-column:span 2}
+.png-setor-kpi .psk-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.png-setor-kpi.highlight .psk-label{color:var(--pse-acc,var(--laranja))}
+.png-setor-kpi .psk-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:34px;line-height:.95;color:var(--azul)}
+.png-setor-kpi.highlight .psk-num{font-size:50px;color:var(--pse-acc,var(--azul))}
+
+/* === Avisos e confirmação DS v3 === */
+#dsToast{position:fixed;top:78px;left:50%;transform:translateX(-50%) translateY(-16px);background:var(--vermelho);color:#fff;padding:12px 42px 12px 16px;border-radius:10px;box-shadow:var(--sombra-lg);font:600 14px Inter,system-ui,sans-serif;z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:90vw}
+#dsToast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+#dsToast.aviso{background:var(--amarelo)}
+#dsToast .dsToastX{position:absolute;top:5px;right:11px;cursor:pointer;font-size:18px;line-height:1;background:none;border:0;color:#fff}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logoBox">
+    <div class="logoMark" aria-hidden="true">DM</div>
+    <div class="sep"></div>
+    <div class="sys"><span>Distribuidora Modelo · Depósito Central</span></div>
+  </div>
+  <div class="header-center">
+    <div class="header-titleBox"><b>Ocupação do Depósito</b><span>Saturação em Tempo Real</span></div>
+  </div>
+  <div class="header-right">
+    <span class="hChip"><span class="dot"></span>Demo de Portfólio</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="layout">
+
+    <!-- SIDEBAR DE ENTRADAS -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Atualizar Dados</div>
+      <div class="sidebar-fields">
+        <div class="field-group">
+          <div class="fg-title">Alimentos</div>
+          <div class="field alim">
+            <label>Disponíveis</label>
+            <input type="number" id="inp-dispA" min="0" placeholder="0" value="">
+          </div>
+          <div class="field alim">
+            <label>Transitório</label>
+            <input type="number" id="inp-trA" min="0" placeholder="0" value="">
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="fg-title san">Saneantes</div>
+          <div class="field san">
+            <label>Disponíveis</label>
+            <input type="number" id="inp-dispS" min="0" placeholder="0" value="">
+          </div>
+          <div class="field san">
+            <label>Transitório</label>
+            <input type="number" id="inp-trS" min="0" placeholder="0" value="">
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="btn btn-secondary" onclick="limpar()">Limpar</button>
+        <button class="btn btn-primary" id="btn-gerar-gravar" onclick="gerarEGravar()">Gerar e Gravar</button>
+        <button class="btn btn-secondary" onclick="abrirHistorico()">Histórico</button>
+      </div>
+    </aside>
+
+    <!-- DASHBOARD -->
+    <div class="dashboard">
+
+      <!-- HERO PRINCIPAL -->
+      <section class="hero" id="hero">
+        <div class="hero-grid">
+          <div class="hero-left">
+            <span class="hero-status" id="hero-status">NORMAL</span>
+            <div class="hero-label">Saturação Geral</div>
+            <div class="hero-num"><span id="hero-num">0</span><span class="pct">%</span></div>
+            <div class="hero-bar"><div class="hero-bar-fill" id="hero-bar" style="width:0%"></div></div>
+          </div>
+          <div class="hero-right">
+            <div class="pse-label">Transitório Sem Endereço</div>
+            <div class="pse-num" id="hero-pse">0</div>
+            <div class="pse-desc">Posições do transitório sem endereço de armazenagem</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPIs GERAIS (4 cards - sem PSE duplicado) -->
+      <section class="kpis">
+        <div class="kpi"><div class="kpi-label">Capacidade</div><div class="kpi-num" id="kpi-cap">3.433</div></div>
+        <div class="kpi"><div class="kpi-label">Ocupados</div><div class="kpi-num" id="kpi-ocp">0</div></div>
+        <div class="kpi"><div class="kpi-label">Disponíveis</div><div class="kpi-num" id="kpi-disp">0</div></div>
+        <div class="kpi"><div class="kpi-label">Transitório</div><div class="kpi-num" id="kpi-tr">0</div></div>
+      </section>
+
+      <!-- SETORES -->
+      <section class="setores">
+        <!-- ALIMENTOS -->
+        <article class="setor alim" id="setor-alim">
+          <div class="setor-head">
+            <div class="setor-name">
+              <span class="dot"></span>
+              <div>
+                <h2>Alimentos</h2>
+                <div class="cap-text">Capacidade 1.955</div>
+              </div>
+            </div>
+            <span class="setor-status" id="alim-status">NORMAL</span>
+          </div>
+          <div class="setor-sat">
+            <div class="setor-sat-label">Saturação</div>
+            <div class="setor-sat-num"><span id="alim-sat">0</span><span class="pct">%</span></div>
+          </div>
+          <div class="setor-bar"><div class="setor-bar-fill" id="alim-bar" style="width:0%"></div></div>
+          <div class="setor-kpis">
+            <div class="setor-kpi"><div class="sk-label">Ocupados</div><div class="sk-num" id="alim-ocp">0</div></div>
+            <div class="setor-kpi"><div class="sk-label">Disponíveis</div><div class="sk-num" id="alim-disp">0</div></div>
+            <div class="setor-kpi"><div class="sk-label">Transitório</div><div class="sk-num" id="alim-tr">0</div></div>
+            <div class="setor-kpi"><div class="sk-label">Capacidade</div><div class="sk-num">1.955</div></div>
+            <div class="setor-kpi highlight full"><div class="sk-label">Transitório Sem Endereço</div><div class="sk-num" id="alim-pse">0</div></div>
+          </div>
+        </article>
+
+        <!-- SANEANTES -->
+        <article class="setor san" id="setor-san">
+          <div class="setor-head">
+            <div class="setor-name">
+              <span class="dot"></span>
+              <div>
+                <h2>Saneantes</h2>
+                <div class="cap-text">Capacidade 1.478</div>
+              </div>
+            </div>
+            <span class="setor-status" id="san-status">NORMAL</span>
+          </div>
+          <div class="setor-sat">
+            <div class="setor-sat-label">Saturação</div>
+            <div class="setor-sat-num"><span id="san-sat">0</span><span class="pct">%</span></div>
+          </div>
+          <div class="setor-bar"><div class="setor-bar-fill" id="san-bar" style="width:0%"></div></div>
+          <div class="setor-kpis">
+            <div class="setor-kpi"><div class="sk-label">Ocupados</div><div class="sk-num" id="san-ocp">0</div></div>
+            <div class="setor-kpi"><div class="sk-label">Disponíveis</div><div class="sk-num" id="san-disp">0</div></div>
+            <div class="setor-kpi"><div class="sk-label">Transitório</div><div class="sk-num" id="san-tr">0</div></div>
+            <div class="setor-kpi"><div class="sk-label">Capacidade</div><div class="sk-num">1.478</div></div>
+            <div class="setor-kpi highlight full"><div class="sk-label">Transitório Sem Endereço</div><div class="sk-num" id="san-pse">0</div></div>
+          </div>
+        </article>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- MODAL REGISTRO DIÁRIO -->
+<div class="modal-bg" id="modal-registro" style="z-index:10002">
+  <div class="modal modal-reg">
+    <h3>PNG Gerado</h3>
+    <div class="modal-sub" id="reg-date"></div>
+    <span class="modal-badge" id="reg-status-badge"></span>
+    <div class="modal-section-title">Mensagem para WhatsApp</div>
+    <p class="modal-inst">A imagem já foi baixada. Toque no botão para abrir o WhatsApp e enviar.</p>
+    <button class="btn btn-success btn-wpp-share" id="btn-wpp-send" onclick="enviarWhatsApp()">Compartilhar via WhatsApp</button>
+    <a class="modal-toggle-msg" id="toggle-msg-wpp" role="button" tabindex="0" onclick="toggleMensagemWpp()">Ver mensagem de texto</a>
+    <div class="modal-box" id="box-msg-wpp" style="display:none">
+      <textarea id="reg-wpp" readonly rows="4"></textarea>
+      <button class="btn-copy" id="btn-copy-wpp" onclick="copiarWpp()">Copiar</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-fechar" onclick="fecharModalRegistro()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR REGISTRO -->
+<div class="modal-bg" id="modal-editar" style="z-index:10000">
+  <div class="modal" style="max-width:460px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h3 style="font-size:17px;font-weight:800;color:var(--azul)">Editar Registro</h3>
+      <button class="btn btn-secondary" style="width:auto;height:32px;font-size:11px" onclick="fecharModalEditar()">Fechar</button>
+    </div>
+    <input type="hidden" id="edit-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div>
+        <label style="display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Data</label>
+        <input type="date" id="edit-data" style="width:100%;height:38px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-size:13px;font-family:Inter,sans-serif;color:var(--texto)">
+      </div>
+      <div></div>
+      <div>
+        <label style="display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">● Disp. Alimentos</label>
+        <input type="number" id="edit-dispA" min="0" style="width:100%;height:38px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--azul);text-align:center">
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">● Transit. Alimentos</label>
+        <input type="number" id="edit-trA" min="0" style="width:100%;height:38px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--azul);text-align:center">
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🟠 Disp. Saneantes</label>
+        <input type="number" id="edit-dispS" min="0" style="width:100%;height:38px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--laranja);text-align:center">
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🟠 Transit. Saneantes</label>
+        <input type="number" id="edit-trS" min="0" style="width:100%;height:38px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--laranja);text-align:center">
+      </div>
+    </div>
+    <div id="edit-erro" style="display:none;color:#DC2626;font-size:12px;font-weight:700;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="salvarEdicao()">Salvar</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="fecharModalEditar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO -->
+<div class="modal-bg" id="modal-historico">
+  <div class="modal" style="max-width:860px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3>Histórico de Ocupação</h3>
+      <button class="btn btn-secondary" style="width:auto;height:32px;font-size:11px" onclick="fecharHistorico()">Fechar</button>
+    </div>
+    <div id="hist-conteudo" style="overflow-x:auto">
+      <p style="color:var(--muted);font-size:13px">Carregando...</p>
+    </div>
+  </div>
+</div>
+<script src="ui_base.js"></script>
+<script>
+function mostrarErro(msg,aviso){var t=document.getElementById('dsToast');if(!t)return;t.className=aviso?'aviso show':'show';t.textContent=String(msg);var x=document.createElement('button');x.className='dsToastX';x.type='button';x.textContent='×';x.onclick=function(){t.classList.remove('show');};t.appendChild(x);clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},4000);}
+/* ===== PERSISTÊNCIA LOCAL (DEMO) =====
+   Esta é uma versão de portfólio: não há back-end real. Os registros do
+   histórico ficam salvos no localStorage do navegador (por dispositivo),
+   com alguns dados de exemplo pré-carregados no primeiro acesso. */
+const LS_KEY = 'demo_ocupacao_deposito_registros';
+
+function lsLoad(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+  catch(_) { return []; }
+}
+function lsSave(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+function lsProximoId(arr){ return arr.reduce((m,r) => Math.max(m, r.id||0), 0) + 1; }
+
+function seedHistoricoDemo(){
+  if(localStorage.getItem(LS_KEY) !== null) return; // já inicializado (mesmo que vazio)
+  const hoje = new Date();
+  const iso = d => d.toISOString().split('T')[0];
+  const addDias = (d,n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+  // Combinações de exemplo (ocupados/transitório) para os últimos dias — ilustram os 4 status
+  const exemplos = [
+    {off:-1,  dispA:520, trA:60,  dispS:410, trS:40},   // normal
+    {off:-2,  dispA:180, trA:120, dispS:260, trS:90},   // atenção
+    {off:-3,  dispA:60,  trA:180, dispS:120, trS:150},  // crítico
+    {off:-4,  dispA:0,   trA:260, dispS:40,  trS:200},  // sobrecapacidade
+    {off:-7,  dispA:610, trA:30,  dispS:480, trS:20},
+    {off:-8,  dispA:340, trA:95,  dispS:300, trS:70},
+    {off:-10, dispA:200, trA:150, dispS:150, trS:130},
+    {off:-14, dispA:700, trA:10,  dispS:520, trS:5}
+  ];
+  const registros = exemplos.map((e,i) => ({
+    id: i+1,
+    data: iso(addDias(hoje, e.off)),
+    alimentos_ocupados: CAP_ALIM - e.dispA,
+    alimentos_total: CAP_ALIM,
+    alimentos_transitorios: e.trA,
+    alimentos_pse: Math.max(0, e.trA - e.dispA),
+    saneantes_ocupados: CAP_SAN - e.dispS,
+    saneantes_total: CAP_SAN,
+    saneantes_transitorios: e.trS,
+    saneantes_pse: Math.max(0, e.trS - e.dispS),
+    excluido_em: null
+  }));
+  lsSave(registros);
+}
+
+async function sbGravar(dados){
+  const arr = lsLoad();
+  const registro = { id: lsProximoId(arr), excluido_em: null, ...dados };
+  arr.push(registro);
+  lsSave(arr);
+  return [registro];
+}
+
+async function sbExcluir(id){
+  const arr = lsLoad().map(r => r.id === id ? { ...r, excluido_em: new Date().toISOString() } : r);
+  lsSave(arr);
+}
+
+/* ===== CAPACIDADES FIXAS ===== */
+const CAP_ALIM = 1955;
+const CAP_SAN  = 1478;
+const CAP_TOT  = 3433;
+
+/* ===== UTIL ===== */
+const fmt = n => Math.round(n).toLocaleString('pt-BR');
+const num = id => {
+  const v = parseInt(document.getElementById(id).value);
+  return isNaN(v) || v < 0 ? 0 : v;
+};
+
+/* ===== STATUS ===== */
+function statusFromSat(sat){
+  if (sat > 100) return {nome:'SOBRECAPACIDADE', cor:'#DC2626', bg:'#FEE2E2'};
+  if (sat >= 95) return {nome:'CRÍTICO',         cor:'#F37020', bg:'#FFEDD5'};
+  if (sat >= 85) return {nome:'ATENÇÃO',         cor:'#B45309', bg:'#FEF3C7'};
+  return                {nome:'NORMAL',          cor:'#16A34A', bg:'#DCFCE7'};
+}
+
+/* ===== CÁLCULO ===== */
+function calcular(){
+  // entradas
+  let dispA = Math.min(num('inp-dispA'), CAP_ALIM);
+  let trA   = num('inp-trA');
+  let dispS = Math.min(num('inp-dispS'), CAP_SAN);
+  let trS   = num('inp-trS');
+
+  // setores
+  const ocpA = CAP_ALIM - dispA;
+  const ocpS = CAP_SAN  - dispS;
+  const satA = ((ocpA + trA) / CAP_ALIM) * 100;
+  const satS = ((ocpS + trS) / CAP_SAN ) * 100;
+  const pseA = Math.max(0, trA - dispA);
+  const pseS = Math.max(0, trS - dispS);
+
+  // gerais
+  const dispG = dispA + dispS;
+  const ocpG  = ocpA  + ocpS;
+  const trG   = trA   + trS;
+  const pseG  = pseA  + pseS;
+  const satG  = ((ocpG + trG) / CAP_TOT) * 100;
+
+  // ===== HERO =====
+  const stG = statusFromSat(satG);
+  const hero = document.getElementById('hero');
+  hero.style.setProperty('--status-color', stG.cor);
+  hero.style.setProperty('--status-bg',    stG.bg);
+  document.getElementById('hero-status').textContent = stG.nome;
+  document.getElementById('hero-num').textContent    = satG.toFixed(1).replace('.', ',');
+  document.getElementById('hero-bar').style.width    = Math.min(100, satG) + '%';
+  document.getElementById('hero-pse').textContent    = fmt(pseG);
+  document.getElementById('hero-pse').style.color    = pseG > 0 ? '#DC2626' : '#16A34A';
+  // card PSE: vermelho se >0, verde se =0
+  const pseCorBg  = pseG > 0 ? '#FEF2F2' : '#F0FDF4';
+  const pseCorBd  = pseG > 0 ? '#FCA5A5' : '#86EFAC';
+  const pseCorAcc = pseG > 0 ? '#DC2626' : '#16A34A';
+  hero.style.setProperty('--pse-bg',  pseCorBg);
+  hero.style.setProperty('--pse-bd',  pseCorBd);
+  hero.style.setProperty('--pse-acc', pseCorAcc);
+
+  // ===== KPIs =====
+  document.getElementById('kpi-ocp').textContent  = fmt(ocpG);
+  document.getElementById('kpi-disp').textContent = fmt(dispG);
+  document.getElementById('kpi-tr').textContent   = fmt(trG);
+
+  // ===== SETOR ALIMENTOS =====
+  const stA = statusFromSat(satA);
+  const sA = document.getElementById('setor-alim');
+  sA.style.setProperty('--setor-color', stA.cor);
+  sA.style.setProperty('--setor-bg',    stA.bg);
+  document.getElementById('alim-status').textContent = stA.nome;
+  document.getElementById('alim-sat').textContent    = satA.toFixed(1).replace('.', ',');
+  document.getElementById('alim-bar').style.width    = Math.min(100, satA) + '%';
+  document.getElementById('alim-ocp').textContent    = fmt(ocpA);
+  document.getElementById('alim-disp').textContent   = fmt(dispA);
+  document.getElementById('alim-tr').textContent     = fmt(trA);
+  document.getElementById('alim-pse').textContent    = fmt(pseA);
+  document.getElementById('alim-pse').style.color    = pseA > 0 ? '#DC2626' : '#16A34A';
+  // PSE setor binário
+  const pseAcorAcc = pseA > 0 ? '#DC2626' : '#16A34A';
+  const pseAcorBg  = pseA > 0 ? '#FEF2F2' : '#F0FDF4';
+  const pseAcorBd  = pseA > 0 ? '#FCA5A5' : '#86EFAC';
+  sA.style.setProperty('--pse-acc', pseAcorAcc);
+  sA.style.setProperty('--pse-bg',  pseAcorBg);
+  sA.style.setProperty('--pse-bd',  pseAcorBd);
+
+  // ===== SETOR SANEANTES =====
+  const stS = statusFromSat(satS);
+  const sS = document.getElementById('setor-san');
+  sS.style.setProperty('--setor-color', stS.cor);
+  sS.style.setProperty('--setor-bg',    stS.bg);
+  document.getElementById('san-status').textContent = stS.nome;
+  document.getElementById('san-sat').textContent    = satS.toFixed(1).replace('.', ',');
+  document.getElementById('san-bar').style.width    = Math.min(100, satS) + '%';
+  document.getElementById('san-ocp').textContent    = fmt(ocpS);
+  document.getElementById('san-disp').textContent   = fmt(dispS);
+  document.getElementById('san-tr').textContent     = fmt(trS);
+  document.getElementById('san-pse').textContent    = fmt(pseS);
+  document.getElementById('san-pse').style.color    = pseS > 0 ? '#DC2626' : '#16A34A';
+  // PSE setor binário
+  const pseSacorAcc = pseS > 0 ? '#DC2626' : '#16A34A';
+  const pseSacorBg  = pseS > 0 ? '#FEF2F2' : '#F0FDF4';
+  const pseSacorBd  = pseS > 0 ? '#FCA5A5' : '#86EFAC';
+  sS.style.setProperty('--pse-acc', pseSacorAcc);
+  sS.style.setProperty('--pse-bg',  pseSacorBg);
+  sS.style.setProperty('--pse-bd',  pseSacorBd);
+
+  // guarda estado p/ PNG
+  window._estado = {dispA,trA,dispS,trS,ocpA,ocpS,satA,satS,pseA,pseS,dispG,ocpG,trG,pseG,satG,stG,stA,stS};
+}
+
+function limpar(){
+  showConfirm('Deseja limpar os campos? Os dados não salvos serão perdidos.', function(){
+    ['inp-dispA','inp-trA','inp-dispS','inp-trS'].forEach(id => document.getElementById(id).value = '');
+    calcular();
+  });
+}
+
+/* ===== LIVE UPDATE ===== */
+['inp-dispA','inp-trA','inp-dispS','inp-trS'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calcular);
+});
+
+/* ===== DATA POR EXTENSO ===== */
+function dataExtenso(){
+  const dias  = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const d = new Date();
+  const txt = `${dias[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
+}
+
+/* ===== MODAL ===== */
+function fecharModal(){ /* mantido para compatibilidade */ }
+
+/* ===== MONTAGEM DO PNG ===== */
+function montarStagePNG(logoDataUrl){
+  calcular();
+  const e = window._estado;
+
+  // cores PSE binário
+  const pseCorPNG = (pse) => ({
+    acc: pse > 0 ? '#DC2626' : '#16A34A',
+    bg:  pse > 0 ? '#FEF2F2' : '#F0FDF4',
+    bd:  pse > 0 ? '#FCA5A5' : '#86EFAC'
+  });
+  const pseG_cor = pseCorPNG(e.pseG);
+  const pseA_cor = pseCorPNG(e.pseA);
+  const pseS_cor = pseCorPNG(e.pseS);
+
+  const setorBlocoHTML = (nome, classe, cap, ocp, disp, tr, pse, sat, st, pseCor) => `
+    <div class="png-setor ${classe}" style="--setor-color:${st.cor};--setor-bg:${st.bg};--pse-acc:${pseCor.acc};--pse-bg:${pseCor.bg};--pse-bd:${pseCor.bd}">
+      <div class="png-setor-head">
+        <div class="png-setor-name">
+          <span class="dot"></span>
+          <div>
+            <h2>${nome}</h2>
+            <div class="cap">Capacidade ${fmt(cap)}</div>
+          </div>
+        </div>
+        <span class="png-setor-status">${st.nome}</span>
+      </div>
+      <div class="png-setor-sat-block">
+        <div class="png-setor-sat">
+          <div class="png-setor-sat-label">Saturação</div>
+          <div class="png-setor-sat-num">${sat.toFixed(1).replace('.',',')}<span class="pct">%</span></div>
+        </div>
+        <div class="png-setor-bar"><div class="png-setor-bar-fill" style="width:${Math.min(100,sat)}%"></div></div>
+      </div>
+      <div class="png-setor-kpis">
+        <div class="png-setor-kpi"><div class="psk-label">Ocupados</div><div class="psk-num">${fmt(ocp)}</div></div>
+        <div class="png-setor-kpi"><div class="psk-label">Disponíveis</div><div class="psk-num">${fmt(disp)}</div></div>
+        <div class="png-setor-kpi"><div class="psk-label">Transitório</div><div class="psk-num">${fmt(tr)}</div></div>
+        <div class="png-setor-kpi"><div class="psk-label">Capacidade</div><div class="psk-num">${fmt(cap)}</div></div>
+        <div class="png-setor-kpi highlight full"><div class="psk-label">Transitório Sem Endereço</div><div class="psk-num">${fmt(pse)}</div></div>
+      </div>
+    </div>`;
+
+  const logoHTML = logoDataUrl
+    ? `<img src="${logoDataUrl}" class="png-logo" alt="logo">`
+    : '';
+
+  const html = `
+    <div class="png-stage" id="png-stage"
+         style="--status-color:${e.stG.cor};--status-bg:${e.stG.bg}">
+
+      <!-- HEAD -->
+      <div class="png-head">
+        ${logoHTML}
+        <div class="png-titles">
+          <h1>OCUPAÇÃO DO DEPÓSITO</h1>
+          <div class="png-date">${dataExtenso()}</div>
+        </div>
+      </div>
+
+      <!-- HERO -->
+      <div class="png-hero" style="--status-color:${e.stG.cor};--status-bg:${e.stG.bg}">
+        <div class="png-hero-grid">
+          <div class="png-hero-left">
+            <div class="png-hero-status">${e.stG.nome}</div>
+            <div class="png-hero-label">Saturação Geral</div>
+            <div class="png-hero-num">${e.satG.toFixed(1).replace('.',',')}<span class="pct">%</span></div>
+            <div class="png-hero-bar"><div class="png-hero-bar-fill" style="width:${Math.min(100,e.satG)}%"></div></div>
+          </div>
+          <div class="png-pse" style="--pse-acc:${pseG_cor.acc};--pse-bg:${pseG_cor.bg};--pse-bd:${pseG_cor.bd}">
+            <div class="png-pse-label">Transitório Sem Endereço</div>
+            <div class="png-pse-num">${fmt(e.pseG)}</div>
+            <div class="png-pse-desc">Posições do transitório sem endereço de armazenagem</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="png-kpis">
+        <div class="png-kpi"><div class="pk-label">Capacidade</div><div class="pk-num">${fmt(CAP_TOT)}</div></div>
+        <div class="png-kpi"><div class="pk-label">Ocupados</div><div class="pk-num">${fmt(e.ocpG)}</div></div>
+        <div class="png-kpi"><div class="pk-label">Disponíveis</div><div class="pk-num">${fmt(e.dispG)}</div></div>
+        <div class="png-kpi"><div class="pk-label">Transitório</div><div class="pk-num">${fmt(e.trG)}</div></div>
+      </div>
+
+      <!-- SETORES -->
+      <div class="png-setores">
+        ${setorBlocoHTML('Alimentos', 'alim', CAP_ALIM, e.ocpA, e.dispA, e.trA, e.pseA, e.satA, e.stA, pseA_cor)}
+        ${setorBlocoHTML('Saneantes', 'san',  CAP_SAN,  e.ocpS, e.dispS, e.trS, e.pseS, e.satS, e.stS, pseS_cor)}
+      </div>
+    </div>
+  `;
+
+  // remove anterior
+  const old = document.getElementById('png-stage');
+  if (old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+/* ===== GERAR PNG ===== */
+async function gerarPNG(logoDataUrl){
+  fecharModal();
+  montarStagePNG(logoDataUrl);
+  const stage = document.getElementById('png-stage');
+  // aguarda fontes e imagens
+  if (document.fonts && document.fonts.ready) { try{ await document.fonts.ready; }catch(_){} }
+  await new Promise(r => setTimeout(r, 250));
+
+  try {
+    const canvas = await html2canvas(stage, {
+      scale: 3,
+      width: 1080,
+      height: 1350,
+      backgroundColor: '#F0F3F7',
+      useCORS: true,
+      logging: false
+    });
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      a.href = url;
+      a.download = `Ocupacao_Deposito_${yyyy}-${mm}-${dd}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+      // abre modal de registro após download
+      setTimeout(()=>abrirModalRegistro(), 400);
+    }, 'image/png');
+  } catch (err) {
+    mostrarErro('Erro ao gerar PNG: ' + err.message);
+    console.error(err);
+  } finally {
+    setTimeout(() => { const s = document.getElementById('png-stage'); if(s) s.remove(); }, 800);
+  }
+}
+
+/* ===== GERAR E GRAVAR (UNIFICADO) ===== */
+async function gerarEGravar(){
+  const e = window._estado;
+  if(!e || (!e.dispA && !e.dispS && !e.trA && !e.trS)){
+    mostrarErro('Preencha os dados antes de continuar.'); return;
+  }
+  const btn = document.getElementById('btn-gerar-gravar');
+  btn.textContent = 'Gravando...'; btn.disabled = true;
+
+  const hoje = new Date();
+  const data = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
+
+  try {
+    await sbGravar({
+      data,
+      alimentos_ocupados: Math.round(e.ocpA),
+      alimentos_total: CAP_ALIM,
+      alimentos_transitorios: Math.round(e.trA),
+      alimentos_pse: Math.round(e.pseA),
+      saneantes_ocupados: Math.round(e.ocpS),
+      saneantes_total: CAP_SAN,
+      saneantes_transitorios: Math.round(e.trS),
+      saneantes_pse: Math.round(e.pseS)
+    });
+  } catch(err){
+    mostrarErro('Erro ao gravar: '+err.message);
+    btn.textContent='Gerar e Gravar'; btn.disabled=false;
+    return;
+  }
+
+  btn.textContent = 'Gerando PNG...';
+  // sem logo própria nesta demo — o cabeçalho do PNG sai só com o título
+  const logo = (typeof LOGO_B64 !== 'undefined') ? LOGO_B64 : null;
+  await gerarPNG(logo);
+  btn.textContent='Gerar e Gravar'; btn.disabled=false;
+}
+
+/* ===== HISTÓRICO com filtro e paginação ===== */
+const HIST_POR_PAG = 30;
+let _histTodos = [];
+let _histPagina = 0;
+let _histFiltrado = [];
+
+async function abrirHistorico(){
+  document.getElementById('modal-historico').classList.add('on');
+  const div = document.getElementById('hist-conteudo');
+  _histTodos = [];
+  _histFiltrado = [];
+  _histPagina = 0;
+  renderHistoricoVazio(div);
+}
+
+let _histAtalho = '';
+
+function atalhoData(tipo){
+  if(!tipo) return;
+  _histAtalho = tipo;
+  const hoje = new Date();
+  const iso = d => d.toISOString().split('T')[0];
+  const addDias = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+  let de, ate;
+  if(tipo==='hoje'){
+    de = ate = iso(hoje);
+  } else if(tipo==='ontem'){
+    de = ate = iso(addDias(hoje,-1));
+  } else if(tipo==='semana'){
+    const dow = hoje.getDay();
+    de  = iso(addDias(hoje, -dow));
+    ate = iso(hoje);
+  } else if(tipo==='semana_ant'){
+    const dow = hoje.getDay();
+    const inicioEsta = addDias(hoje, -dow);
+    de  = iso(addDias(inicioEsta, -7));
+    ate = iso(addDias(inicioEsta, -1));
+  } else if(tipo==='mes'){
+    de  = iso(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+    ate = iso(hoje);
+  } else if(tipo==='mes_ant'){
+    de  = iso(new Date(hoje.getFullYear(), hoje.getMonth()-1, 1));
+    ate = iso(new Date(hoje.getFullYear(), hoje.getMonth(), 0));
+  }
+  const elDe  = document.getElementById('hist-de');
+  const elAte = document.getElementById('hist-ate');
+  if(elDe)  elDe.value  = de;
+  if(elAte) elAte.value = ate;
+  filtrarHistorico();
+}
+
+const FILTRO_BARRA_HTML = (deVal='', ateVal='', selVal='') => {
+  const opt = (v, label) => `<option value="${v}" ${selVal===v?'selected':''}>${label}</option>`;
+  return `
+  <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <label style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase">Atalho</label>
+      <select id="sel-atalho" onchange="atalhoData(this.value)"
+        style="height:34px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-size:12px;font-weight:700;font-family:Inter,sans-serif;color:var(--azul);background:#fff;cursor:pointer;min-width:148px">
+        ${opt('','Selecionar...')}
+        ${opt('hoje','Hoje')}
+        ${opt('ontem','Ontem')}
+        ${opt('semana','Esta semana')}
+        ${opt('semana_ant','Semana passada')}
+        ${opt('mes','Este mês')}
+        ${opt('mes_ant','Mês anterior')}
+      </select>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <label style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase">De</label>
+      <input type="date" id="hist-de" value="${deVal}" style="height:34px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-size:13px;font-family:Inter,sans-serif">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <label style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase">Até</label>
+      <input type="date" id="hist-ate" value="${ateVal}" style="height:34px;border:1px solid var(--borda);border-radius:8px;padding:0 10px;font-size:13px;font-family:Inter,sans-serif">
+    </div>
+    <button onclick="filtrarHistorico()" style="height:34px;background:var(--azul);color:#fff;border:none;border-radius:8px;padding:0 16px;font-weight:800;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Filtrar</button>
+    <button onclick="limparFiltroHistorico()" style="height:34px;background:#fff;color:var(--azul);border:1px solid var(--borda);border-radius:8px;padding:0 16px;font-weight:800;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Limpar</button>
+  </div>`;
+};
+
+function renderHistoricoVazio(div){
+  div.innerHTML = FILTRO_BARRA_HTML('', '', _histAtalho) +
+    `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Selecione um período e clique em <strong>Filtrar</strong> para exibir os registros.</p>`;
+}
+
+async function filtrarHistorico(){
+  const de  = document.getElementById('hist-de').value;
+  const ate = document.getElementById('hist-ate').value;
+
+  const deVal  = de;
+  const ateVal = ate;
+
+  let rows = lsLoad().filter(r => !r.excluido_em);
+  if(de)  rows = rows.filter(r => r.data >= de);
+  if(ate) rows = rows.filter(r => r.data <= ate);
+  rows.sort((a,b) => b.data.localeCompare(a.data));
+
+  _histTodos    = rows;
+  _histFiltrado = rows;
+  _histPagina   = 0;
+  renderHistorico(document.getElementById('hist-conteudo'), deVal, ateVal);
+}
+
+function limparFiltroHistorico(){
+  _histTodos    = [];
+  _histFiltrado = [];
+  _histPagina   = 0;
+  _histAtalho   = '';
+  renderHistoricoVazio(document.getElementById('hist-conteudo'));
+}
+
+function mudarPaginaHistorico(dir){
+  const totalPags = Math.ceil(_histFiltrado.length / HIST_POR_PAG);
+  _histPagina = Math.max(0, Math.min(_histPagina + dir, totalPags - 1));
+  const de  = document.getElementById('hist-de')  ? document.getElementById('hist-de').value  : '';
+  const ate = document.getElementById('hist-ate') ? document.getElementById('hist-ate').value : '';
+  renderHistorico(document.getElementById('hist-conteudo'), de, ate);
+}
+
+function renderHistorico(div, deVal='', ateVal=''){
+  const fmtData = d => { const [y,m,dd]=d.split('-'); return dd+'/'+m+'/'+y; };
+  const fmt2    = n => Number(n).toLocaleString('pt-BR');
+
+  const total     = _histFiltrado.length;
+  const totalPags = Math.max(1, Math.ceil(total / HIST_POR_PAG));
+  const inicio    = _histPagina * HIST_POR_PAG;
+  const pagina    = _histFiltrado.slice(inicio, inicio + HIST_POR_PAG);
+
+  let html = FILTRO_BARRA_HTML(deVal, ateVal, _histAtalho) +
+    `<span style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:10px">${total} registro(s)</span>`;
+
+  if(!pagina.length){
+    html += '<p style="color:var(--muted);font-size:13px">Nenhum registro encontrado para o período.</p>';
+    div.innerHTML = html; return;
+  }
+
+  html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:var(--azul);color:#fff">
+      <th style="padding:8px 10px;text-align:left;white-space:nowrap">Data</th>
+      <th style="padding:8px 10px;text-align:center;white-space:nowrap">Sat. Geral</th>
+      <th style="padding:8px 10px;text-align:center;white-space:nowrap">Trans. S/ End.</th>
+      <th style="padding:8px 10px;text-align:center;white-space:nowrap">Sat. Alim.</th>
+      <th style="padding:8px 10px;text-align:center;white-space:nowrap">Disp. Alim.</th>
+      <th style="padding:8px 10px;text-align:center;white-space:nowrap">Sat. San.</th>
+      <th style="padding:8px 10px;text-align:center;white-space:nowrap">Disp. San.</th>
+      <th style="padding:8px 10px;text-align:center;width:160px;white-space:nowrap">Ações</th>
+    </tr></thead><tbody>`;
+
+  pagina.forEach((r,i)=>{
+    const ocpA  = r.alimentos_ocupados;
+    const ocpS  = r.saneantes_ocupados;
+    const trA   = r.alimentos_transitorios || 0;
+    const trS   = r.saneantes_transitorios || 0;
+    const dispA = CAP_ALIM - ocpA;
+    const dispS = CAP_SAN  - ocpS;
+    const totG  = CAP_TOT;
+    const ocpG  = ocpA + ocpS;
+    const trG   = trA + trS;
+    const pseG  = (r.alimentos_pse || 0) + (r.saneantes_pse || 0);
+    const satG  = (((ocpG + trG) / CAP_TOT) * 100).toFixed(1).replace('.',',');
+    const satA  = (((ocpA + trA) / CAP_ALIM) * 100).toFixed(1).replace('.',',');
+    const satS  = (((ocpS + trS) / CAP_SAN ) * 100).toFixed(1).replace('.',',');
+
+    const corSat = v => {
+      const n = parseFloat(v.replace(',','.'));
+      if(n > 100) return '#DC2626';
+      if(n >= 95) return '#F37020';
+      if(n >= 85) return '#B45309';
+      return '#16A34A';
+    };
+    const bgSat = v => {
+      const n = parseFloat(v.replace(',','.'));
+      if(n > 100) return '#FEE2E2';
+      if(n >= 95) return '#FFEDD5';
+      if(n >= 85) return '#FEF3C7';
+      return '#DCFCE7';
+    };
+
+    const badgeSat = v => `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;background:${bgSat(v)};color:${corSat(v)}">${v}%</span>`;
+
+    const bg = i%2===0?'#fff':'#F8FAFD';
+    html += `<tr style="background:${bg}">
+      <td style="padding:7px 10px;font-weight:700;white-space:nowrap">${fmtData(r.data)}</td>
+      <td style="padding:7px 10px;text-align:center">${badgeSat(satG)}</td>
+      <td style="padding:7px 10px;text-align:center;font-weight:800;color:${pseG>0?'#DC2626':'#16A34A'}">${fmt2(pseG)}</td>
+      <td style="padding:7px 10px;text-align:center">${badgeSat(satA)}</td>
+      <td style="padding:7px 10px;text-align:center">${fmt2(dispA)}</td>
+      <td style="padding:7px 10px;text-align:center">${badgeSat(satS)}</td>
+      <td style="padding:7px 10px;text-align:center">${fmt2(dispS)}</td>
+      <td style="padding:7px 10px;text-align:center;white-space:nowrap">
+        <button onclick="editarRegistro(${r.id})" style="background:var(--azul);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;margin-right:3px">Editar</button>
+        <button onclick="imprimirRegistroHist(${r.id})" style="background:#0369A1;color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;margin-right:3px">Imprimir</button>
+        <button onclick="excluirRegistro(${r.id})" style="background:#DC2626;color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer">Excluir</button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px">
+      <button onclick="mudarPaginaHistorico(-1)" ${_histPagina===0?'disabled':''} style="height:32px;padding:0 16px;border-radius:8px;border:1px solid var(--borda);background:#fff;color:var(--azul);font-weight:800;font-size:12px;cursor:pointer;font-family:Inter,sans-serif;${_histPagina===0?'opacity:.4;cursor:default':''}">← Anterior</button>
+      <span style="font-size:12px;font-weight:700;color:var(--muted)">Página ${_histPagina+1} de ${totalPags}</span>
+      <button onclick="mudarPaginaHistorico(1)" ${_histPagina>=totalPags-1?'disabled':''} style="height:32px;padding:0 16px;border-radius:8px;border:1px solid var(--borda);background:#fff;color:var(--azul);font-weight:800;font-size:12px;cursor:pointer;font-family:Inter,sans-serif;${_histPagina>=totalPags-1?'opacity:.4;cursor:default':''}">Próximo →</button>
+    </div>`;
+
+  div.innerHTML = html;
+}
+
+function excluirRegistro(id){
+  showConfirm('Excluir este registro? O dado ficará oculto mas poderá ser recuperado localmente.', async function(){
+    try {
+      await sbExcluir(id);
+      // atualiza lista local sem buscar novamente
+      _histTodos    = _histTodos.filter(r=>r.id!==id);
+      _histFiltrado = _histFiltrado.filter(r=>r.id!==id);
+      const totalPags = Math.max(1, Math.ceil(_histFiltrado.length/HIST_POR_PAG));
+      if(_histPagina >= totalPags) _histPagina = totalPags-1;
+      renderHistorico(document.getElementById('hist-conteudo'));
+    } catch(err){ mostrarErro('Erro ao excluir: '+err.message); }
+  });
+}
+
+function fecharHistorico(){
+  document.getElementById('modal-historico').classList.remove('on');
+}
+
+/* ===== MODAL REGISTRO ===== */
+function gerarMensagemWpp(e, dataExtenso){
+  // Mensagem em texto limpo (sem emoji) — evita o caractere quebrado no WhatsApp
+  const frases = {
+    'NORMAL':          'Depósito operando dentro da capacidade normal.',
+    'ATENÇÃO':         'Depósito em situação de atenção.',
+    'CRÍTICO':         'Depósito em situação crítica.',
+    'SOBRECAPACIDADE': 'Depósito em sobrecapacidade.'
+  };
+  const frase = frases[e.stG.nome] || '';
+  return `Segue a atualização da ocupação do depósito de ${dataExtenso}.\n${frase}`;
+}
+
+function abrirModalRegistro(){
+  const e = window._estado;
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  const dataFmt = `${dd}/${mm}/${yyyy}`;
+
+  document.getElementById('reg-date').textContent = dataFmt;
+
+  const badge = document.getElementById('reg-status-badge');
+  badge.textContent = e.stG.nome;
+  badge.style.background = e.stG.bg;
+  badge.style.color = e.stG.cor;
+
+  document.getElementById('reg-wpp').value = gerarMensagemWpp(e, dataExtenso());
+  document.getElementById('modal-registro').classList.add('on');
+}
+
+function fecharModalRegistro(){
+  document.getElementById('modal-registro').classList.remove('on');
+  const btn = document.getElementById('btn-copy-wpp');
+  if(btn){ btn.textContent = 'Copiar'; btn.classList.remove('copied'); }
+  // recolhe a mensagem de texto ao fechar
+  const box = document.getElementById('box-msg-wpp');
+  const tog = document.getElementById('toggle-msg-wpp');
+  if(box) box.style.display = 'none';
+  if(tog) tog.textContent = 'Ver mensagem de texto';
+}
+
+/* Mostra/oculta o textarea com a mensagem de texto copiável */
+function toggleMensagemWpp(){
+  const box = document.getElementById('box-msg-wpp');
+  const tog = document.getElementById('toggle-msg-wpp');
+  if(!box) return;
+  const aberto = box.style.display !== 'none';
+  box.style.display = aberto ? 'none' : 'block';
+  if(tog) tog.textContent = aberto ? 'Ver mensagem de texto' : 'Ocultar mensagem de texto';
+}
+
+/* Abre o WhatsApp com a mensagem (PNG já foi baixado ao gerar) */
+function enviarWhatsApp(){
+  const ta  = document.getElementById('reg-wpp');
+  const txt = ta ? ta.value : '';
+  const url = txt ? ('https://wa.me/?text=' + encodeURIComponent(txt)) : 'https://wa.me/';
+  window.open(url, '_blank');
+}
+
+function copiarWpp(){
+  copiarTexto('reg-wpp', 'btn-copy-wpp');
+}
+
+function copiarTexto(taId, btnId){
+  const ta  = document.getElementById(taId);
+  const btn = document.getElementById(btnId);
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(() => {
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2500);
+  }).catch(() => {
+    document.execCommand('copy');
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+  });
+}
+
+/* ===== EDITAR REGISTRO ===== */
+async function editarRegistro(id){
+  const r = _histFiltrado.find(x => x.id === id) || _histTodos.find(x => x.id === id);
+  if(!r) return;
+  // reconstrói disponíveis a partir dos ocupados
+  const dispA = CAP_ALIM - r.alimentos_ocupados;
+  const dispS = CAP_SAN  - r.saneantes_ocupados;
+  document.getElementById('edit-id').value    = r.id;
+  document.getElementById('edit-data').value  = r.data;
+  document.getElementById('edit-dispA').value = dispA;
+  document.getElementById('edit-trA').value   = r.alimentos_transitorios || 0;
+  document.getElementById('edit-dispS').value = dispS;
+  document.getElementById('edit-trS').value   = r.saneantes_transitorios || 0;
+  document.getElementById('edit-erro').style.display = 'none';
+  document.getElementById('modal-editar').classList.add('on');
+}
+
+function fecharModalEditar(){
+  document.getElementById('modal-editar').classList.remove('on');
+}
+
+async function salvarEdicao(){
+  const id    = parseInt(document.getElementById('edit-id').value);
+  const data  = document.getElementById('edit-data').value;
+  const dispA = parseInt(document.getElementById('edit-dispA').value) || 0;
+  const trA   = parseInt(document.getElementById('edit-trA').value)   || 0;
+  const dispS = parseInt(document.getElementById('edit-dispS').value) || 0;
+  const trS   = parseInt(document.getElementById('edit-trS').value)   || 0;
+  const erro  = document.getElementById('edit-erro');
+
+  if(!data){ erro.textContent='Informe a data.'; erro.style.display='block'; return; }
+
+  const ocpA = CAP_ALIM - Math.min(dispA, CAP_ALIM);
+  const ocpS = CAP_SAN  - Math.min(dispS, CAP_SAN);
+  const pseA = Math.max(0, trA - Math.min(dispA, CAP_ALIM));
+  const pseS = Math.max(0, trS - Math.min(dispS, CAP_SAN));
+
+  const payload = {
+    data,
+    alimentos_ocupados:    ocpA,
+    alimentos_total:       CAP_ALIM,
+    alimentos_transitorios: trA,
+    alimentos_pse:         pseA,
+    saneantes_ocupados:    ocpS,
+    saneantes_total:       CAP_SAN,
+    saneantes_transitorios: trS,
+    saneantes_pse:         pseS
+  };
+
+  try {
+    const arr = lsLoad();
+    const idxArr = arr.findIndex(x => x.id === id);
+    if(idxArr < 0) throw new Error('Registro não encontrado.');
+    const novo = { ...arr[idxArr], ...payload };
+    arr[idxArr] = novo;
+    lsSave(arr);
+    const idxTodos = _histTodos.findIndex(x=>x.id===id);
+    if(idxTodos>=0) _histTodos[idxTodos] = novo;
+    const idxFilt = _histFiltrado.findIndex(x=>x.id===id);
+    if(idxFilt>=0) _histFiltrado[idxFilt] = novo;
+    fecharModalEditar();
+    const de  = document.getElementById('hist-de')  ? document.getElementById('hist-de').value  : '';
+    const ate = document.getElementById('hist-ate') ? document.getElementById('hist-ate').value : '';
+    renderHistorico(document.getElementById('hist-conteudo'), de, ate);
+  } catch(err){
+    erro.textContent = 'Erro ao salvar: '+err.message;
+    erro.style.display = 'block';
+  }
+}
+
+/* ===== IMPRIMIR REGISTRO DO HISTÓRICO ===== */
+async function imprimirRegistroHist(id){
+  const r = _histFiltrado.find(x=>x.id===id) || _histTodos.find(x=>x.id===id);
+  if(!r) return;
+
+  // reconstrói estado a partir do registro
+  const dispA = CAP_ALIM - r.alimentos_ocupados;
+  const dispS = CAP_SAN  - r.saneantes_ocupados;
+  const trA   = r.alimentos_transitorios || 0;
+  const trS   = r.saneantes_transitorios || 0;
+  const ocpA  = r.alimentos_ocupados;
+  const ocpS  = r.saneantes_ocupados;
+  const pseA  = r.alimentos_pse || Math.max(0, trA - dispA);
+  const pseS  = r.saneantes_pse || Math.max(0, trS - dispS);
+  const dispG = dispA + dispS;
+  const ocpG  = ocpA + ocpS;
+  const trG   = trA + trS;
+  const pseG  = pseA + pseS;
+  const satA  = ((ocpA + trA) / CAP_ALIM) * 100;
+  const satS  = ((ocpS + trS) / CAP_SAN ) * 100;
+  const satG  = ((ocpG + trG) / CAP_TOT ) * 100;
+  const stG   = statusFromSat(satG);
+  const stA   = statusFromSat(satA);
+  const stS   = statusFromSat(satS);
+
+  // estado deste registro — guardado em variável local, não em window._estado
+  const eHist = {dispA,trA,dispS,trS,ocpA,ocpS,satA,satS,pseA,pseS,dispG,ocpG,trG,pseG,satG,stG,stA,stS};
+
+  // data por extenso do registro
+  const [yyyy, mm, dd] = r.data.split('-');
+  const diasNomes  = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const mesesNomes = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dataObj    = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd));
+  const dataExtRaw = `${diasNomes[dataObj.getDay()]}, ${parseInt(dd)} de ${mesesNomes[parseInt(mm)-1]} de ${yyyy}`;
+  const dataExtFmt = dataExtRaw.charAt(0).toUpperCase() + dataExtRaw.slice(1);
+
+  // monta o stage PNG usando eHist (local, sem tocar window._estado)
+  const montarStage = (logoDataUrl) => {
+    const pseCorPNG = (pse) => ({
+      acc: pse > 0 ? '#DC2626' : '#16A34A',
+      bg:  pse > 0 ? '#FEF2F2' : '#F0FDF4',
+      bd:  pse > 0 ? '#FCA5A5' : '#86EFAC'
+    });
+    const pseG_cor = pseCorPNG(eHist.pseG);
+    const pseA_cor = pseCorPNG(eHist.pseA);
+    const pseS_cor = pseCorPNG(eHist.pseS);
+
+    const blocoSetor = (nome, cls, cap, ocp, disp, tr, pse, sat, st, pc) => `
+      <div class="png-setor ${cls}" style="--setor-color:${st.cor};--setor-bg:${st.bg};--pse-acc:${pc.acc};--pse-bg:${pc.bg};--pse-bd:${pc.bd}">
+        <div class="png-setor-head">
+          <div class="png-setor-name"><span class="dot"></span>
+            <div><h2>${nome}</h2><div class="cap">Capacidade ${fmt(cap)}</div></div>
+          </div>
+          <span class="png-setor-status">${st.nome}</span>
+        </div>
+        <div class="png-setor-sat-block">
+          <div class="png-setor-sat">
+            <div class="png-setor-sat-label">Saturação</div>
+            <div class="png-setor-sat-num">${sat.toFixed(1).replace('.',',')}<span class="pct">%</span></div>
+          </div>
+          <div class="png-setor-bar"><div class="png-setor-bar-fill" style="width:${Math.min(100,sat)}%"></div></div>
+        </div>
+        <div class="png-setor-kpis">
+          <div class="png-setor-kpi"><div class="psk-label">Ocupados</div><div class="psk-num">${fmt(ocp)}</div></div>
+          <div class="png-setor-kpi"><div class="psk-label">Disponíveis</div><div class="psk-num">${fmt(disp)}</div></div>
+          <div class="png-setor-kpi"><div class="psk-label">Transitório</div><div class="psk-num">${fmt(tr)}</div></div>
+          <div class="png-setor-kpi"><div class="psk-label">Capacidade</div><div class="psk-num">${fmt(cap)}</div></div>
+          <div class="png-setor-kpi highlight full"><div class="psk-label">Transitório Sem Endereço</div><div class="psk-num">${fmt(pse)}</div></div>
+        </div>
+      </div>`;
+
+    const logoHTML = logoDataUrl ? `<img src="${logoDataUrl}" class="png-logo" alt="logo">` : '';
+    const old = document.getElementById('png-stage-hist'); if(old) old.remove();
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="png-stage" id="png-stage-hist" style="--status-color:${eHist.stG.cor};--status-bg:${eHist.stG.bg}">
+        <div class="png-head">${logoHTML}
+          <div class="png-titles"><h1>OCUPAÇÃO DO DEPÓSITO</h1><div class="png-date">${dataExtFmt}</div></div>
+        </div>
+        <div class="png-hero" style="--status-color:${eHist.stG.cor};--status-bg:${eHist.stG.bg}">
+          <div class="png-hero-grid">
+            <div class="png-hero-left">
+              <div class="png-hero-status">${eHist.stG.nome}</div>
+              <div class="png-hero-label">Saturação Geral</div>
+              <div class="png-hero-num">${eHist.satG.toFixed(1).replace('.',',')}<span class="pct">%</span></div>
+              <div class="png-hero-bar"><div class="png-hero-bar-fill" style="width:${Math.min(100,eHist.satG)}%"></div></div>
+            </div>
+            <div class="png-pse" style="--pse-acc:${pseG_cor.acc};--pse-bg:${pseG_cor.bg};--pse-bd:${pseG_cor.bd}">
+              <div class="png-pse-label">Transitório Sem Endereço</div>
+              <div class="png-pse-num">${fmt(eHist.pseG)}</div>
+              <div class="png-pse-desc">Posições do transitório sem endereço de armazenagem</div>
+            </div>
+          </div>
+        </div>
+        <div class="png-kpis">
+          <div class="png-kpi"><div class="pk-label">Capacidade</div><div class="pk-num">${fmt(CAP_TOT)}</div></div>
+          <div class="png-kpi"><div class="pk-label">Ocupados</div><div class="pk-num">${fmt(eHist.ocpG)}</div></div>
+          <div class="png-kpi"><div class="pk-label">Disponíveis</div><div class="pk-num">${fmt(eHist.dispG)}</div></div>
+          <div class="png-kpi"><div class="pk-label">Transitório</div><div class="pk-num">${fmt(eHist.trG)}</div></div>
+        </div>
+        <div class="png-setores">
+          ${blocoSetor('Alimentos','alim',CAP_ALIM,eHist.ocpA,eHist.dispA,eHist.trA,eHist.pseA,eHist.satA,eHist.stA,pseA_cor)}
+          ${blocoSetor('Saneantes','san', CAP_SAN, eHist.ocpS,eHist.dispS,eHist.trS,eHist.pseS,eHist.satS,eHist.stS,pseS_cor)}
+        </div>
+      </div>`);
+  };
+
+  // abre modal Wpp usando eHist local (sem depender de window._estado)
+  const abrirModalWppHist = () => {
+    document.getElementById('reg-date').textContent = `${dd}/${mm}/${yyyy}`;
+    const badge = document.getElementById('reg-status-badge');
+    badge.textContent      = eHist.stG.nome;
+    badge.style.background = eHist.stG.bg;
+    badge.style.color      = eHist.stG.cor;
+    document.getElementById('reg-wpp').value = gerarMensagemWpp(eHist, dataExtFmt);
+    document.getElementById('modal-registro').classList.add('on');
+  };
+
+  // gera PNG e abre modal
+  const executar = async (logoDataUrl) => {
+    montarStage(logoDataUrl);
+    const stage = document.getElementById('png-stage-hist');
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(_){} }
+    await new Promise(res => setTimeout(res, 250));
+    try {
+      const canvas = await html2canvas(stage, {
+        scale:3, width:1080, height:1350,
+        backgroundColor:'#F0F3F7', useCORS:true, logging:false
+      });
+      // download PNG
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = `Ocupacao_Deposito_${r.data}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+      // abre modal Wpp (usa eHist local, sem timing race)
+      abrirModalWppHist();
+    } catch(err){
+      console.error('Erro ao gerar PNG:', err);
+    } finally {
+      setTimeout(()=>{ const s=document.getElementById('png-stage-hist'); if(s) s.remove(); }, 800);
+    }
+  };
+
+  // logo via constante base64 (funciona offline / file://)
+  await executar((typeof LOGO_B64 !== 'undefined') ? LOGO_B64 : null);
+}
+
+/* ===== CANCELAR MODAL EDITAR AO CLICAR FORA ===== */
+document.getElementById('modal-editar').addEventListener('click', function(e){
+  if(e.target === this) fecharModalEditar();
+});
+document.getElementById('modal-registro').addEventListener('click', function(e){
+  if (e.target === this) fecharModalRegistro();
+});
+document.getElementById('modal-historico').addEventListener('click', function(e){
+  if (e.target === this) fecharHistorico();
+});
+seedHistoricoDemo();
+</script>
+<div class="footer">Painel de Ocupação de Depósito · Demo de Portfólio — desenvolvido por Victor Paredes</div>
+<div id="dsToast" role="alert"></div></body>
+</html>
