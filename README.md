@@ -2,7 +2,8 @@
 
 Repositório pessoal com versões de demonstração de sistemas que desenvolvo,
 sem vínculo com nenhuma empresa — identidade visual e dados sempre fictícios
-ou de exemplo.
+ou de exemplo. Novas demos são adicionadas periodicamente conforme novos
+módulos são recriados para portfólio.
 
 ## Demos
 
