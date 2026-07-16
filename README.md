@@ -10,3 +10,7 @@ módulos são recriados para portfólio.
 - [`ocupacao-deposito-demo/`](ocupacao-deposito-demo/) — Painel de Ocupação de
   Depósito: acompanhamento em tempo real da saturação de um depósito logístico,
   com geração de relatório em imagem e histórico de registros.
+
+## Licença
+
+Código disponível para avaliação de portfólio, não licenciado para reuso comercial.
