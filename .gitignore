@@ -1,2 +1,5 @@
 .DS_Store
 Thumbs.db
+
+# Configurações locais do Claude Code
+.claude/settings.local.json
